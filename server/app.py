@@ -30,17 +30,34 @@ def bakeries():
     )
     return response
 
-@app.route('/bakeries/<int:id>')
+@app.route('/bakeries/<int:id>', methods = ['PATCH'])
 def bakery_by_id(id):
-
     bakery = Bakery.query.filter_by(id=id).first()
-    bakery_serialized = bakery.to_dict()
 
-    response = make_response(
-        bakery_serialized,
-        200
-    )
-    return response
+    data = request.form
+
+    for attr in data:
+        setattr(bakery, attr, data[attr])
+
+    db.session.commit()
+    return make_response(bakery.to_dict(), 200)
+
+@app.route('/baked_goods/<int:id>', methods = ['DELETE'])
+def baked_goods_by_id(id):
+    baked_good = BakedGood.query.filter_by(id=id).first()
+
+    db.session.delete(baked_good)
+    db.session.commit()
+    return make_response(jsonify({ 'message': 'Baked good deleted' }), 200)
+
+
+@app.route('/baked_goods', methods = ['POST'])
+def post():
+    data = request.form
+    baked_good = BakedGood(name=data['name'], price=data['price'], bakery_id=data['bakery_id'])
+    db.session.add(baked_good)
+    db.session.commit()
+    return make_response(baked_good.to_dict(), 201)
 
 @app.route('/baked_goods/by_price')
 def baked_goods_by_price():
